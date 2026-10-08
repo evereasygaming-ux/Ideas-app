@@ -162,14 +162,31 @@ public class Bootstrap {
         pb.environment().put("PROOT_NO_SECCOMP", "1");
 
         Process p = pb.start();
-        String output = readAll(p.getInputStream());
+
+        byte[] buf = new byte[8192];
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        Thread pump = new Thread(() -> {
+            try (InputStream in = p.getInputStream()) {
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    captured.write(buf, 0, n);
+                }
+            } catch (IOException ignored) {
+                // Pump thread must never crash the bootstrap.
+            }
+        }, "ideas-proot-pump");
+        pump.start();
+
         boolean finished = p.waitFor(PROOT_TIMEOUT_MIN, TimeUnit.MINUTES);
         if (!finished) {
             p.destroyForcibly();
+            pump.join(2000);
             throw new IOException("proot timed out running: " + String.join(" ", innerArgs));
         }
-        Log.i(TAG, "proot " + String.join(" ", innerArgs) + " -> exit " + p.exitValue());
-        return output;
+        pump.join(2000);
+        Log.i(TAG, "proot " + String.join(" ", innerArgs) + " -> exit " + p.exitValue()
+                + ", output " + captured.size() + " bytes");
+        return captured.toString(StandardCharsets.UTF_8.name());
     }
 
     void copyAsset(String assetName, File dest) throws IOException {
@@ -195,15 +212,5 @@ public class Bootstrap {
         try (OutputStream out = new FileOutputStream(file)) {
             out.write(text.getBytes(StandardCharsets.UTF_8));
         }
-    }
-
-    static String readAll(InputStream in) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        byte[] buf = new byte[8192];
-        int n;
-        while ((n = in.read(buf)) > 0) {
-            bos.write(buf, 0, n);
-        }
-        return bos.toString(StandardCharsets.UTF_8.name());
     }
 }
