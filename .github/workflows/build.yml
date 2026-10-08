@@ -18,19 +18,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Download PRoot ARM64
-        run: |
-          mkdir -p app/src/main/assets
-          wget -O app/src/main/assets/proot-arm64 \
-            https://github.com/termux/proot/releases/download/v5.1.107/proot-aarch64
-          chmod +x app/src/main/assets/proot-arm64
-
-      - name: Download Alpine rootfs
-        run: |
-          mkdir -p app/src/main/assets
-          wget -O app/src/main/assets/alpine-rootfs.tar.gz \
-            https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/aarch64/alpine-minirootfs-3.20.0-aarch64.tar.gz
-
       - name: Make gradlew executable
         run: chmod +x gradlew
 
