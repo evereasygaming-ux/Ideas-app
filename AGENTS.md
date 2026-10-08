@@ -20,7 +20,7 @@ Self-contained Android APK: AI-powered coding assistant with own runtime.
 
 ## Folder Structure
 - app/src/main/java/com/ideas/app/  → Java code
-- app/src/main/assets/              → proot-arm64, alpine-rootfs.tar.gz, www/
+- app/src/main/assets/              → proot-arm64, alpine-rootfs.tar (raw tar — aapt2 strips .gz), www/
 - app/src/main/res/                 → layouts, icons
 - .github/workflows/                → CI/CD
 

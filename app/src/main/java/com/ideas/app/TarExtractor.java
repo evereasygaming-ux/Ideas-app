@@ -3,11 +3,13 @@ package com.ideas.app;
 import android.system.Os;
 import android.util.Log;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -26,11 +28,22 @@ final class TarExtractor {
     private TarExtractor() {
     }
 
-    static void extractGz(File tarGz, File destDir) throws IOException {
-        try (InputStream fin = new FileInputStream(tarGz);
-             GZIPInputStream gz = new GZIPInputStream(fin, 1 << 16)) {
-            extract(gz, destDir);
+    static void extract(File tarFile, File destDir) throws IOException {
+        try (FileInputStream fin = new FileInputStream(tarFile)) {
+            byte[] magic = new byte[2];
+            int n = fin.read(magic);
+            InputStream in;
+            if (n == 2 && (magic[0] & 0xFF) == 0x1F && (magic[1] & 0xFF) == 0x8B) {
+                in = new GZIPInputStream(new SequenceInputStream(new ByteArrayInputStream(magic), fin), 1 << 16);
+            } else {
+                in = new SequenceInputStream(new ByteArrayInputStream(magic, 0, n), fin);
+            }
+            extract(in, destDir);
         }
+    }
+
+    static void extractGz(File tarGz, File destDir) throws IOException {
+        extract(tarGz, destDir);
     }
 
     private static void extract(InputStream in, File destDir) throws IOException {

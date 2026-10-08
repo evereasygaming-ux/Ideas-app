@@ -84,9 +84,9 @@ public class Bootstrap {
 
         l.onProgress(15, "Extracting Alpine rootfs...");
         if (!new File(getRootfsDir(), "bin/busybox").exists()) {
-            File tmp = new File(getRuntimeDir(), "rootfs.tar.gz");
-            copyAsset("alpine-rootfs.tar.gz", tmp);
-            TarExtractor.extractGz(tmp, getRootfsDir());
+            File tmp = new File(getRuntimeDir(), "rootfs.tar");
+            copyAsset("alpine-rootfs.tar", tmp);
+            TarExtractor.extract(tmp, getRootfsDir());
             //noinspection ResultOfMethodCallIgnored
             tmp.delete();
         }
