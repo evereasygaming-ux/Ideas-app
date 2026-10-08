@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">IDEAS</string>
+    <string name="status_starting">Preparing IDEAS runtime...</string>
+    <string name="retry">Retry</string>
 </resources>

@@ -10,8 +10,8 @@
 
 ## Status
 - [x] Phase 1: Android skeleton
-- [ ] Phase 1.5: Build pipeline test (CURRENT)
-- [ ] Phase 2: Bootstrap (proot + Alpine)
+- [x] Phase 1.5: Build pipeline test
+- [ ] Phase 2: Bootstrap (proot + Alpine) (CURRENT)
 - [ ] Phase 3: IDEAS Node.js server
 - [ ] Phase 4: WebView UI
 - [ ] Phase 5: OpenCode integration
@@ -24,21 +24,23 @@
 4. Bade binaries download mat karo
 5. `ls --color=never` use karo (hang se bachne ke liye)
 
-## PHASE 1.5 — Build Pipeline Test (CURRENT)
+## PHASE 1.5 — Build Pipeline Test
 
 Tasks:
-- [ ] 1.5.1: build.yml mein `chmod +x gradlew` step add karo
-- [ ] 1.5.2: build.yml mein `--stacktrace` flag add karo
-- [ ] 1.5.3: build.yml mein `setup-android` action confirm hata diya
-- [ ] 1.5.4: User push kare, build status check kare
-- [ ] 1.5.5: Build fail ho toh error log fix karo
+- [x] 1.5.1: build.yml mein `chmod +x gradlew` step add karo
+- [x] 1.5.2: build.yml mein `--stacktrace` flag add karo
+- [x] 1.5.3: build.yml mein `setup-android` action confirm hata diya
+- [x] 1.5.4: User push kare, build status check kare
+- [x] 1.5.5: Build fail ho toh error log fix karo
 
-## PHASE 2 — Bootstrap System
-Files:
-- [ ] bootstrap.sh (Alpine extract + Node install)
-- [ ] Bootstrap.java (assets se runtime setup)
-- [ ] ServerManager.java (PRoot se Node start)
-- [ ] MainActivity.java update
+## PHASE 2 — Bootstrap System (CURRENT)
+Tasks:
+- [x] 2.0: Audit assets — rootfs OK (Alpine 3.20.0 aarch64); proot-arm64 was 0 bytes (blocker)
+- [x] 2.0b: Real PRoot ARM64 binary added (jniLibs/arm64-v8a/libproot.so + assets fallback)
+- [ ] 2.1: Bootstrap.java (rootfs extract + Node install + verify)
+- [ ] 2.2: ServerManager.java (Node a PRoot se start, logs)
+- [ ] 2.3: MainActivity.java (progress + ready + retry + errors)
+- [ ] 2.4: GitHub Actions build verification (Phase 2)
 
 ## PHASE 3 — Node.js Server
 Files:
