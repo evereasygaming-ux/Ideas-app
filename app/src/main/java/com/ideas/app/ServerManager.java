@@ -77,6 +77,8 @@ public class ServerManager {
                 cmd.add("/dev");
                 cmd.add("-b");
                 cmd.add("/proc");
+                cmd.add("-v");
+                cmd.add("3");
                 cmd.add("/usr/bin/node");
                 cmd.add("server.js");
 
@@ -85,6 +87,8 @@ public class ServerManager {
                 pb.environment().put("PROOT_TMP_DIR", bootstrap.getRuntimeDir().getAbsolutePath());
                 pb.environment().put("PROOT_NO_SECCOMP", "1");
                 pb.environment().put("PORT", String.valueOf(PORT));
+                File loader = new File(app.getApplicationInfo().nativeLibraryDir, "libloader.so");
+                pb.environment().put("PROOT_LOADER", loader.getAbsolutePath());
 
                 Process started = pb.start();
                 synchronized (lock) {
