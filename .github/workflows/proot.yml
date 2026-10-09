@@ -1,0 +1,37 @@
+name: Build static proot
+
+on:
+  workflow_dispatch:
+
+jobs:
+  proot:
+    runs-on: ubuntu-24.04-arm
+    container: alpine:3.20
+    steps:
+      - name: Install build deps
+        run: |
+          apk add --no-cache build-base make git bison flex \
+            talloc-dev talloc-static
+
+      - name: Build proot (statically linked musl)
+        run: |
+          git clone --depth 1 https://github.com/proot-me/proot.git /tmp/proot
+          cd /tmp/proot/src
+          make -j$(nproc) CFLAGS="-Os -static" LDFLAGS="-static"
+          strip /tmp/proot/src/proot
+          test -s /tmp/proot/src/proot
+
+      - name: Verify static (no interpreter)
+        run: |
+          if readelf -l /tmp/proot/src/proot | grep -q INTERP; then
+            echo "ERROR: binary is not static" && exit 1
+          fi
+          readelf -d /tmp/proot/src/proot | grep NEEDED && exit 1 || \
+            echo "OK: no NEEDED / fully static"
+
+      - name: Upload static proot
+        uses: actions/upload-artifact@v4
+        with:
+          name: proot-arm64
+          path: /tmp/proot/src/proot
+          if-no-files-found: error
