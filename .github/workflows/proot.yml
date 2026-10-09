@@ -16,7 +16,8 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/proot-me/proot.git /tmp/proot
           cd /tmp/proot/src
-          make -j$(nproc) WITHOUT_PYTHON=1 CFLAGS="-O2" LDFLAGS="-static"
+          make -j$(nproc) WITHOUT_PYTHON=1 CFLAGS="-O2" \
+          LDFLAGS="$(pkg-config --libs talloc) -static"
           strip /tmp/proot/src/proot
           test -s /tmp/proot/src/proot
 
