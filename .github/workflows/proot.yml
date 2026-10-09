@@ -57,10 +57,12 @@ jobs:
           TALLOC_INC="$(dirname "$(find /tmp/talloc -name talloc.h | head -1)")"
           make -j$(nproc) CC=musl-gcc CFLAGS="-Os -I/tmp/shim -I/tmp/kinc -I$TALLOC_INC \
             -D_GNU_SOURCE -D_LARGEFILE64_SOURCE \
+            -DPROOT_UNBUNDLE_LOADER=/data/data/com.ideas.app/files/runtime \
             -DMSG_COPY=040000 -DMSG_STAT_ANY=04001 -DSEM_STAT_ANY=04001 -DSHM_STAT_ANY=04001" \
             LDFLAGS="$TALLOC_DIR/libtalloc.a -static"
           strip /tmp/proot/src/proot
           test -s /tmp/proot/src/proot
+          test -s /tmp/proot/src/loader/loader
 
       - name: Verify static (no interpreter, no NEEDED)
         run: |
@@ -72,9 +74,11 @@ jobs:
           fi
           echo "OK: fully static"
 
-      - name: Upload static proot
+      - name: Upload static proot and loader
         uses: actions/upload-artifact@v4
         with:
           name: proot-arm64
-          path: /tmp/proot/src/proot
+          path: |
+            /tmp/proot/src/proot
+            /tmp/proot/src/loader/loader
           if-no-files-found: error

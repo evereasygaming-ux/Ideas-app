@@ -152,6 +152,8 @@ public class Bootstrap {
         cmd.add("/dev");
         cmd.add("-b");
         cmd.add("/proc");
+        cmd.add("-v");
+        cmd.add("3");
         for (String a : innerArgs) {
             cmd.add(a);
         }
@@ -160,6 +162,8 @@ public class Bootstrap {
         pb.redirectErrorStream(true);
         pb.environment().put("PROOT_TMP_DIR", getRuntimeDir().getAbsolutePath());
         pb.environment().put("PROOT_NO_SECCOMP", "1");
+        File loader = new File(app.getApplicationInfo().nativeLibraryDir, "libloader.so");
+        pb.environment().put("PROOT_LOADER", loader.getAbsolutePath());
 
         Process p = pb.start();
 
