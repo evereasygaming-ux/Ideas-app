@@ -156,6 +156,17 @@ diagButton = findViewById(R.id.diagnostics);
         }
     }
 
+    private void exportDiagnostics() {
+        new Thread(() -> {
+            try {
+                new Diagnostics(this).share();
+                runOnUiThread(() -> Toast.makeText(this, "Diagnostics exported", Toast.LENGTH_SHORT).show());
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
     @Override
     protected void onDestroy() {
         if (serverManager != null) {
