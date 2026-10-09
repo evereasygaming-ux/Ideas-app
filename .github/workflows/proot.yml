@@ -50,13 +50,36 @@ jobs:
         run: |
           git clone --branch v5.1.107.96 --depth 1 https://github.com/termux/proot.git /tmp/proot
           cd /tmp/proot/src
+          # Force unbundle mode
+          sed -i '/ifdef PROOT_UNBUNDLE_LOADER/,+10s/^/# FORCED: /' GNUmakefile
+          sed -i 's|ifdef HAS_POKEDATA_WORKAROUND|# disabled|' GNUmakefile 2>/dev/null || true
+          # Replace unbundle logic: ensure objects don't include wrapped
+          cat >> /tmp/fix_unbundle.sh << 'SH'
+          SH
+          # Simpler: directly patch
+          python3 -c "
+import re,sys
+p='GNUmakefile'
+s=open(p).read()
+# Force define
+s=s.replace('CFLAGS += \"-DPROOT_UNBUNDLE_LOADER=\\\"$(PROOT_UNBUNDLE_LOADER)\\\"\"','CFLAGS += \"-DPROOT_UNBUNDLE_LOADER=\\\\\"/data/data/com.ideas.app/files/runtime\\\\\"\"')
+# Also if not found, add
+if 'PROOT_UNBUNDLE_LOADER' not in s:
+    s=s.replace('CFLAGS   += -Wall -Wextra -O2','CFLAGS   += -Wall -Wextra -O2 -DPROOT_UNBUNDLE_LOADER=\\\"/data/data/com.ideas.app/files/runtime\\\"')
+# Remove bundled object additions in non-unbundled paths? easier: force unbundle section
+s=s.replace('else\n  OBJECTS += loader/loader-wrapped.o','else\n  # forced unbundle: skip wrapped')
+s=s.replace('ifdef HAS_LOADER_32BIT\n  OBJECTS += loader/loader-m32-wrapped.o','ifdef HAS_LOADER_32BIT\n  # skip')
+open(p,'w').write(s)
+print('ok')
+" 2>&1 | tail -1
+          cat GNUmakefile | grep PROOT_UNBUNDLE_LOADER | head -2
           sed -i 's/ifdef HAS_LOADER_32BIT/ifeq (force_off,1)/' GNUmakefile
           sed -i '1i #include <gnu_compat.h>' extension/sysvipc/sysvipc_shm.c
           sed -i '1i #include <linux/stat.h>' tracee/statx.h
           TALLOC_DIR="$(dirname "$(find /tmp/talloc -name libtalloc.a | head -1)")"
           TALLOC_INC="$(dirname "$(find /tmp/talloc -name talloc.h | head -1)")"
-          make -j$(nproc) CC=musl-gcc PROOT_UNBUNDLE_LOADER=/data/data/com.ideas.app/files/runtime \
-            CFLAGS="-Os -I/tmp/shim -I/tmp/kinc -I$TALLOC_INC \
+          make -j$(nproc) CC=musl-gcc CFLAGS="-Os -I/tmp/shim -I/tmp/kinc -I$TALLOC_INC \
+            -DPROOT_UNBUNDLE_LOADER=\\\"/data/data/com.ideas.app/files/runtime\\\" \
             -D_GNU_SOURCE -D_LARGEFILE64_SOURCE \
             -DMSG_COPY=040000 -DMSG_STAT_ANY=04001 -DSEM_STAT_ANY=04001 -DSHM_STAT_ANY=04001" \
             LDFLAGS="$TALLOC_DIR/libtalloc.a -static"
