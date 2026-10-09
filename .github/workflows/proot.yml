@@ -19,7 +19,8 @@ jobs:
             https://download.samba.org/pub/talloc/talloc-2.3.4.tar.gz
           tar xzf /tmp/tc/talloc.tar.gz -C /tmp/tc/talloc --strip-components=1
           cd /tmp/tc/talloc
-          musl-gcc -O2 -I. -c talloc.c -o talloc.o
+          touch config.h lib/replace/config.h
+          musl-gcc -O2 -I. -Ilib/replace -Ilib/replace/system -c talloc.c -o talloc.o
           ar rcs /tmp/tc/lib/libtalloc.a talloc.o
           test -s /tmp/tc/lib/libtalloc.a
           ls -la /tmp/tc/lib/libtalloc.a
