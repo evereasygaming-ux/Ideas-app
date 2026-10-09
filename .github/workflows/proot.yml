@@ -16,7 +16,7 @@ jobs:
       - name: Provide sys/queue.h shim (musl lacks it)
         run: |
           mkdir -p /tmp/shim/sys
-          curl -fsSL -o /tmp/shim/sys/queue.h \
+          wget -qO /tmp/shim/sys/queue.h \
             https://raw.githubusercontent.com/bminor/glibc/master/misc/sys/queue.h
           test -s /tmp/shim/sys/queue.h
 
