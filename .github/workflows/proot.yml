@@ -16,6 +16,7 @@ jobs:
         run: |
           git clone --branch v5.1.107.96 --depth 1 https://github.com/termux/proot.git /tmp/proot
           cd /tmp/proot/src
+          sed -i 's/ifdef HAS_LOADER_32BIT/ifeq (force_off,1)/' GNUmakefile
           make -j$(nproc) CFLAGS="-O2" \
             LDFLAGS="$(pkg-config --libs talloc) -static -Wl,-z,noexecstack"
           strip /tmp/proot/src/proot
