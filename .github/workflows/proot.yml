@@ -11,7 +11,7 @@ jobs:
       - name: Install build deps
         run: |
           apk add --no-cache build-base make git bison flex \
-            talloc-dev talloc-static
+            linux-headers talloc-dev talloc-static
 
       - name: Build proot (statically linked musl)
         run: |
