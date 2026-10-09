@@ -25,6 +25,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: proot-arm64
+          run-id: 37882050361
           path: /tmp/proot-artifacts
 
       - name: Install proot binaries
