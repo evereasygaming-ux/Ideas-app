@@ -10,14 +10,14 @@ jobs:
       - name: Install build deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y make gcc libtalloc-dev libc6-dev
+          sudo apt-get install -y make gcc pkg-config libtalloc-dev libc6-dev
 
-      - name: Build proot (statically linked)
+      - name: Build static proot (termux fork)
         run: |
-          git clone --depth 1 https://github.com/proot-me/proot.git /tmp/proot
+          git clone --branch v5.1.107.96 --depth 1 https://github.com/termux/proot.git /tmp/proot
           cd /tmp/proot/src
-          make -j$(nproc) WITHOUT_PYTHON=1 CFLAGS="-O2" \
-          LDFLAGS="$(pkg-config --libs talloc) -static"
+          make -j$(nproc) CFLAGS="-O2" \
+            LDFLAGS="$(pkg-config --libs talloc) -static -Wl,-z,noexecstack"
           strip /tmp/proot/src/proot
           test -s /tmp/proot/src/proot
 
