@@ -10,15 +10,35 @@ jobs:
       - name: Install build deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y make gcc pkg-config libtalloc-dev libc6-dev
+          sudo apt-get install -y make musl-tools linux-libc-dev git curl
 
-      - name: Build static proot (termux fork)
+      - name: Build talloc (static, musl)
+        run: |
+          mkdir -p /tmp/tc
+          curl -fsSL -o /tmp/tc/talloc.tar.gz \
+            https://download.samba.org/pub/talloc/talloc-2.4.2.tar.gz
+          tar xzf /tmp/tc/talloc.tar.gz -C /tmp/tc
+          cd /tmp/tc/talloc-2.4.2
+          CC=musl-gcc ./configure --without-python \
+            --disable-rpath --prefix=/tmp/tc/prefix >/dev/null
+          CC=musl-gcc ./waf build -j$(nproc) >/dev/null
+          CC=musl-gcc ./waf install >/dev/null
+          ls -la /tmp/tc/prefix/lib/libtalloc.a
+
+      - name: Provide sys/queue.h shim (musl lacks it)
+        run: |
+          mkdir -p /tmp/shim/sys
+          curl -fsSL -o /tmp/shim/sys/queue.h \
+            https://raw.githubusercontent.com/bminor/glibc/master/misc/sys/queue.h
+          test -s /tmp/shim/sys/queue.h
+
+      - name: Build static proot (termux fork, musl)
         run: |
           git clone --branch v5.1.107.96 --depth 1 https://github.com/termux/proot.git /tmp/proot
           cd /tmp/proot/src
           sed -i 's/ifdef HAS_LOADER_32BIT/ifeq (force_off,1)/' GNUmakefile
-          make -j$(nproc) CFLAGS="-O2" \
-            LDFLAGS="$(pkg-config --libs talloc) -static -Wl,-z,noexecstack"
+          make -j$(nproc) CC=musl-gcc CFLAGS="-Os -I/tmp/shim -I/tmp/tc/prefix/include" \
+            LDFLAGS="/tmp/tc/prefix/lib/libtalloc.a -static -Wl,-z,noexecstack"
           strip /tmp/proot/src/proot
           test -s /tmp/proot/src/proot
 
