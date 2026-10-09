@@ -6,24 +6,12 @@ on:
 jobs:
   proot:
     runs-on: ubuntu-24.04-arm
+    container: alpine:3.20
     steps:
       - name: Install build deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y make musl-tools linux-libc-dev git curl
-
-      - name: Build talloc (static, musl)
-        run: |
-          mkdir -p /tmp/tc/lib /tmp/tc/talloc
-          curl -fsSL -o /tmp/tc/talloc.tar.gz \
-            https://download.samba.org/pub/talloc/talloc-2.3.4.tar.gz
-          tar xzf /tmp/tc/talloc.tar.gz -C /tmp/tc/talloc --strip-components=1
-          cd /tmp/tc/talloc
-          touch config.h lib/replace/config.h
-          musl-gcc -O2 -I. -Ilib/replace -Ilib/replace/system -c talloc.c -o talloc.o
-          ar rcs /tmp/tc/lib/libtalloc.a talloc.o
-          test -s /tmp/tc/lib/libtalloc.a
-          ls -la /tmp/tc/lib/libtalloc.a
+          apk add --no-cache build-base make git linux-headers \
+            talloc-dev talloc-static
 
       - name: Provide sys/queue.h shim (musl lacks it)
         run: |
@@ -37,8 +25,8 @@ jobs:
           git clone --branch v5.1.107.96 --depth 1 https://github.com/termux/proot.git /tmp/proot
           cd /tmp/proot/src
           sed -i 's/ifdef HAS_LOADER_32BIT/ifeq (force_off,1)/' GNUmakefile
-          make -j$(nproc) CC=musl-gcc CFLAGS="-Os -I/tmp/shim -I/tmp/tc/talloc" \
-            LDFLAGS="/tmp/tc/lib/libtalloc.a -static -Wl,-z,noexecstack"
+          make -j$(nproc) CFLAGS="$(pkg-config --cflags talloc) -Os -I/tmp/shim" \
+            LDFLAGS="$(pkg-config --libs talloc) -static"
           strip /tmp/proot/src/proot
           test -s /tmp/proot/src/proot
 
