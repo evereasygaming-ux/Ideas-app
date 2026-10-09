@@ -6,19 +6,32 @@ on:
 jobs:
   proot:
     runs-on: ubuntu-24.04-arm
-    container: alpine:3.20
     steps:
       - name: Install build deps
         run: |
-          apk add --no-cache build-base make git linux-headers \
-            talloc-dev talloc-static
+          sudo apt-get update
+          sudo apt-get install -y make musl-tools git ca-certificates
 
-      - name: Provide sys/queue.h shim (musl lacks it)
+      - name: Fetch musl talloc (from Alpine aarch64 repos)
+        run: |
+          TS=$(wget -qO- https://dl-cdn.alpinelinux.org/alpine/v3.20/main/aarch64/ \
+              | grep -o 'href="talloc-static-[^"]*\.apk"' | head -1 | cut -d'"' -f2)
+          TSA=$(wget -qO- https://dl-cdn.alpinelinux.org/alpine/v3.20/main/aarch64/ \
+              | grep -o 'href="talloc-static-[^"]*\.apk"' | head -1 | cut -d'"' -f2)
+          TD=$(wget -qO- https://dl-cdn.alpinelinux.org/alpine/v3.20/main/aarch64/ \
+              | grep -o 'href="talloc-dev-[^"]*\.apk"' | head -1 | cut -d'"' -f2)
+          mkdir -p /tmp/talloc/lib /tmp/talloc/include /tmp/talloc/dev
+          wget -qO /tmp/talloc/static.apk "https://dl-cdn.alpinelinux.org/alpine/v3.20/main/aarch64/$TSA"
+          wget -qO /tmp/talloc/dev.apk "https://dl-cdn.alpinelinux.org/alpine/v3.20/main/aarch64/$TD"
+          tar xzf /tmp/talloc/static.apk -C /tmp/talloc/lib
+          tar xzf /tmp/talloc/dev.apk -C /tmp/talloc/include
+          find /tmp/talloc -name 'libtalloc.a' -o -name 'talloc.h' | head
+
+      - name: Provide musl shims (sys/queue.h, TEMP_FAILURE_RETRY)
         run: |
           mkdir -p /tmp/shim/sys
           wget -qO /tmp/shim/sys/queue.h \
             https://raw.githubusercontent.com/bminor/glibc/master/misc/sys/queue.h
-          test -s /tmp/shim/sys/queue.h
           cat > /tmp/shim/gnu_compat.h <<'EOF'
           #include <errno.h>
           #ifndef TEMP_FAILURE_RETRY
@@ -36,10 +49,12 @@ jobs:
           cd /tmp/proot/src
           sed -i 's/ifdef HAS_LOADER_32BIT/ifeq (force_off,1)/' GNUmakefile
           sed -i '1i #include <gnu_compat.h>' extension/sysvipc/sysvipc_shm.c
-          make -j$(nproc) CFLAGS="$(pkg-config --cflags talloc) -Os -I/tmp/shim \
+          TALLOC_DIR="$(dirname "$(find /tmp/talloc -name libtalloc.a | head -1)")"
+          TALLOC_INC="$(dirname "$(find /tmp/talloc -name talloc.h | head -1)")"
+          make -j$(nproc) CC=musl-gcc CFLAGS="-Os -I/tmp/shim -I$TALLOC_INC \
             -D_GNU_SOURCE -D_LARGEFILE64_SOURCE \
             -DMSG_COPY=040000 -DMSG_STAT_ANY=04001 -DSEM_STAT_ANY=04001 -DSHM_STAT_ANY=04001" \
-            LDFLAGS="$(pkg-config --libs talloc) -static"
+            LDFLAGS="$TALLOC_DIR/libtalloc.a -static"
           strip /tmp/proot/src/proot
           test -s /tmp/proot/src/proot
 
