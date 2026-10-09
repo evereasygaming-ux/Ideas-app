@@ -204,7 +204,7 @@ public class Bootstrap {
         Log.i(TAG, "proot " + String.join(" ", innerArgs) + " -> exit " + p.exitValue()
                 + ", output " + captured.size() + " bytes");
         try {
-            if (output.contains("Permission denied") || output.contains("proot error") || p.exitValue() != 0) {
+            if (p.exitValue() != 0 || output.length() > 0) {
                 File dbg = new File(getRuntimeDir(), "proot-debug.log");
                 java.io.FileWriter fw = new java.io.FileWriter(dbg, false);
                 fw.write("cmd: " + String.join(" ", cmd) + "\n");
