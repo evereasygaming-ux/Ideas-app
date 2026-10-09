@@ -163,7 +163,19 @@ public class Bootstrap {
         pb.environment().put("PROOT_TMP_DIR", getRuntimeDir().getAbsolutePath());
         pb.environment().put("PROOT_NO_SECCOMP", "1");
         File loader = new File(app.getApplicationInfo().nativeLibraryDir, "libloader.so");
-        pb.environment().put("PROOT_LOADER", loader.getAbsolutePath());
+        File loaderRuntime = new File(getRuntimeDir(), "loader");
+        try {
+            if (loader.exists() && !loaderRuntime.exists()) {
+                java.nio.file.Files.copy(loader.toPath(), loaderRuntime.toPath());
+                loaderRuntime.setExecutable(true, false);
+            }
+        } catch (Exception ignored) {}
+        if (loaderRuntime.exists() && loaderRuntime.canExecute()) {
+            pb.environment().put("PROOT_LOADER", loaderRuntime.getAbsolutePath());
+        } else {
+            pb.environment().put("PROOT_LOADER", loader.getAbsolutePath());
+        }
+
 
         Process p = pb.start();
 
@@ -188,9 +200,20 @@ public class Bootstrap {
             throw new IOException("proot timed out running: " + String.join(" ", innerArgs));
         }
         pump.join(2000);
+        String output = captured.toString(StandardCharsets.UTF_8.name());
         Log.i(TAG, "proot " + String.join(" ", innerArgs) + " -> exit " + p.exitValue()
                 + ", output " + captured.size() + " bytes");
-        return captured.toString(StandardCharsets.UTF_8.name());
+        try {
+            if (output.contains("Permission denied") || output.contains("proot error") || p.exitValue() != 0) {
+                File dbg = new File(getRuntimeDir(), "proot-debug.log");
+                java.io.FileWriter fw = new java.io.FileWriter(dbg, false);
+                fw.write("cmd: " + String.join(" ", cmd) + "\n");
+                fw.write("exit: " + p.exitValue() + "\n");
+                fw.write("output:\n" + output);
+                fw.close();
+            }
+        } catch (Exception ignored) {}
+        return output;
     }
 
     void copyAsset(String assetName, File dest) throws IOException {

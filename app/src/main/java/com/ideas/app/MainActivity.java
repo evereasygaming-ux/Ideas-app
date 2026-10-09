@@ -9,6 +9,7 @@ import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -21,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView statusText;
     private Button retryButton;
+    private Button diagButton;
 
     private Bootstrap bootstrap;
     private ServerManager serverManager;
@@ -36,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progress);
         statusText = findViewById(R.id.status);
         retryButton = findViewById(R.id.retry);
+diagButton = findViewById(R.id.diagnostics);
 
         configureWebView();
 
@@ -43,6 +46,9 @@ public class MainActivity extends AppCompatActivity {
         serverManager = new ServerManager(this);
 
         retryButton.setOnClickListener(v -> startFlow());
+        if (diagButton != null) {
+            diagButton.setOnClickListener(v -> exportDiagnostics());
+        }
 
         startFlow();
     }

@@ -88,8 +88,28 @@ public class ServerManager {
                 pb.environment().put("PROOT_NO_SECCOMP", "1");
                 pb.environment().put("PORT", String.valueOf(PORT));
                 File loader = new File(app.getApplicationInfo().nativeLibraryDir, "libloader.so");
-                pb.environment().put("PROOT_LOADER", loader.getAbsolutePath());
+                File loaderRuntime = new File(bootstrap.getRuntimeDir(), "loader");
+                try {
+                    if (loader.exists() && !loaderRuntime.exists()) {
+                        java.nio.file.Files.copy(loader.toPath(), loaderRuntime.toPath());
+                        loaderRuntime.setExecutable(true, false);
+                    }
+                } catch (Exception ignored) {}
+                if (loaderRuntime.exists() && loaderRuntime.canExecute()) {
+                    pb.environment().put("PROOT_LOADER", loaderRuntime.getAbsolutePath());
+                } else {
+                    pb.environment().put("PROOT_LOADER", loader.getAbsolutePath());
+                }
 
+
+                // write debug
+                try {
+                    java.io.FileWriter fw = new java.io.FileWriter(new java.io.File(bootstrap.getRuntimeDir(), "server-debug.log"), false);
+                    fw.write("cmd: " + String.join(" ", cmd) + "\n");
+                    fw.write("PROOT_LOADER=" + pb.environment().get("PROOT_LOADER") + "\n");
+                    fw.write("PROOT_TMP_DIR=" + pb.environment().get("PROOT_TMP_DIR") + "\n");
+                    fw.close();
+                } catch (Exception ignored) {}
                 Process started = pb.start();
                 synchronized (lock) {
                     process = started;
