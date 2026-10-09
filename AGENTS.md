@@ -21,6 +21,7 @@ Self-contained Android APK: AI-powered coding assistant with own runtime.
 ## Folder Structure
 - app/src/main/java/com/ideas/app/  → Java code
 - app/src/main/assets/              → proot-arm64, alpine-rootfs.tar (raw tar — aapt2 strips .gz), www/
+- app/src/main/jniLibs/arm64-v8a/   → libproot.so + deps (libtalloc.so.2, libandroid-shmem.so) — proot is dynamic-linked Termux build
 - app/src/main/res/                 → layouts, icons
 - .github/workflows/                → CI/CD
 
