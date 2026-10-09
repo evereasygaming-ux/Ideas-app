@@ -6,28 +6,29 @@ on:
 jobs:
   proot:
     runs-on: ubuntu-24.04-arm
-    container: alpine:3.20
     steps:
       - name: Install build deps
         run: |
-          apk add --no-cache build-base make git bison flex \
-            linux-headers talloc-dev talloc-static
+          sudo apt-get update
+          sudo apt-get install -y make gcc libtalloc-dev libc6-dev
 
-      - name: Build proot (statically linked musl)
+      - name: Build proot (statically linked)
         run: |
           git clone --depth 1 https://github.com/proot-me/proot.git /tmp/proot
           cd /tmp/proot/src
-          make -j$(nproc) CFLAGS="-Os -static" LDFLAGS="-static"
+          make -j$(nproc) CFLAGS="-O2" LDFLAGS="-static"
           strip /tmp/proot/src/proot
           test -s /tmp/proot/src/proot
 
-      - name: Verify static (no interpreter)
+      - name: Verify static (no interpreter, no NEEDED)
         run: |
-          if readelf -l /tmp/proot/src/proot | grep -q INTERP; then
+          if readelf -l /tmp/proot/src/proot | grep -q 'INTERP'; then
             echo "ERROR: binary is not static" && exit 1
           fi
-          readelf -d /tmp/proot/src/proot | grep NEEDED && exit 1 || \
-            echo "OK: no NEEDED / fully static"
+          if readelf -d /tmp/proot/src/proot | grep 'NEEDED'; then
+            echo "ERROR: binary still has NEEDED" && exit 1
+          fi
+          echo "OK: fully static"
 
       - name: Upload static proot
         uses: actions/upload-artifact@v4
