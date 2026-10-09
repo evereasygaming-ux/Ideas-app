@@ -21,23 +21,6 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Download static proot and loader
-        uses: actions/download-artifact@v4
-        with:
-          name: proot-arm64
-          run-id: 37882050361
-          path: /tmp/proot-artifacts
-
-      - name: Install proot binaries
-        run: |
-          mkdir -p app/src/main/jniLibs/arm64-v8a
-          cp /tmp/proot-artifacts/proot app/src/main/jniLibs/arm64-v8a/libproot.so
-          cp /tmp/proot-artifacts/loader app/src/main/jniLibs/arm64-v8a/libloader.so
-          chmod +x app/src/main/jniLibs/arm64-v8a/*.so
-          # Also keep asset copy for older devices
-          cp /tmp/proot-artifacts/proot app/src/main/assets/proot-arm64
-          chmod +x app/src/main/assets/proot-arm64
-
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
