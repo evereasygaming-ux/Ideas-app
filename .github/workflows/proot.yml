@@ -52,6 +52,7 @@ jobs:
           cd /tmp/proot/src
           sed -i 's/ifdef HAS_LOADER_32BIT/ifeq (force_off,1)/' GNUmakefile
           sed -i '1i #include <gnu_compat.h>' extension/sysvipc/sysvipc_shm.c
+          sed -i '1i #include <linux/stat.h>' tracee/statx.h
           TALLOC_DIR="$(dirname "$(find /tmp/talloc -name libtalloc.a | head -1)")"
           TALLOC_INC="$(dirname "$(find /tmp/talloc -name talloc.h | head -1)")"
           make -j$(nproc) CC=musl-gcc CFLAGS="-Os -I/tmp/shim -I/tmp/kinc -I$TALLOC_INC \
