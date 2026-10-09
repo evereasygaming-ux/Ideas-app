@@ -14,16 +14,15 @@ jobs:
 
       - name: Build talloc (static, musl)
         run: |
-          mkdir -p /tmp/tc
+          mkdir -p /tmp/tc/lib /tmp/tc/talloc
           curl -fsSL -o /tmp/tc/talloc.tar.gz \
             https://download.samba.org/pub/talloc/talloc-2.4.2.tar.gz
-          tar xzf /tmp/tc/talloc.tar.gz -C /tmp/tc
-          cd /tmp/tc/talloc-2.4.2
-          CC=musl-gcc ./configure --disable-python \
-            --disable-rpath --prefix=/tmp/tc/prefix >/dev/null
-          CC=musl-gcc ./waf build -j$(nproc) >/dev/null
-          CC=musl-gcc ./waf install >/dev/null
-          ls -la /tmp/tc/prefix/lib/libtalloc.a
+          tar xzf /tmp/tc/talloc.tar.gz -C /tmp/tc/talloc --strip-components=1
+          cd /tmp/tc/talloc
+          musl-gcc -O2 -c talloc.c -o talloc.o
+          ar rcs /tmp/tc/lib/libtalloc.a talloc.o
+          test -s /tmp/tc/lib/libtalloc.a
+          ls -la /tmp/tc/lib/libtalloc.a
 
       - name: Provide sys/queue.h shim (musl lacks it)
         run: |
@@ -37,8 +36,8 @@ jobs:
           git clone --branch v5.1.107.96 --depth 1 https://github.com/termux/proot.git /tmp/proot
           cd /tmp/proot/src
           sed -i 's/ifdef HAS_LOADER_32BIT/ifeq (force_off,1)/' GNUmakefile
-          make -j$(nproc) CC=musl-gcc CFLAGS="-Os -I/tmp/shim -I/tmp/tc/prefix/include" \
-            LDFLAGS="/tmp/tc/prefix/lib/libtalloc.a -static -Wl,-z,noexecstack"
+          make -j$(nproc) CC=musl-gcc CFLAGS="-Os -I/tmp/shim -I/tmp/tc/talloc" \
+            LDFLAGS="/tmp/tc/lib/libtalloc.a -static -Wl,-z,noexecstack"
           strip /tmp/proot/src/proot
           test -s /tmp/proot/src/proot
 
